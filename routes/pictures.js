@@ -1,17 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
 const AWS = require('aws-sdk');
-require('aws-sdk/lib/maintenance_mode_message').supress = true;
+require('aws-sdk/lib/maintenance_mode_message').suppress = true;
 const s3 = new AWS.S3();
+const { requiresAuth } = require('express-openid-connect');
 
 //Get pictures listing.
-router.get('/', async function(req, res, next) {
+router.get('/', requiresAuth(), async function(req, res, next) {
     const params = {
         Bucket : process.env.CYCLIC_BUCKET_NAME,
         Delimiter : '/',
-        Prefix : 'public/'
+        Prefix : req.oidc.user.email + '/'
     };
     const allObjects = await s3.listObjects(params).promise();
     const keys = allObjects?.Contents.map( x => x.Key );
@@ -22,30 +21,33 @@ router.get('/', async function(req, res, next) {
         }).promise();
         return {
             src : Buffer.from(my_file.Body).toString('base64'),
-            name : key.split('/'.toUpperCase())
+            name : key.split('/').pop()
         }
     })) 
     res.render('pictures', { pictures : pictures})
 });
 
 //display file of params.
-router.get('/:pictureName', function(req, res, next) {
-    const pictureName = req.params.pictureName;
-    const pictures = fs.readdirSync(path.join(__dirname, '../pictures/'));
-    let result = pictures.filter(picture => picture == pictureName)
-    res.render('pictures', { pictures : result })
+router.get('/:pictureName', requiresAuth(), async function(req, res, next) {
+    const pictureName = 'public/' + req.params.pictureName;
+        const result = await s3.getObject({
+            Bucket : process.env.CYCLIC_BUCKET_NAME,
+            Key : pictureName,
+        }).promise();
+    let pictures =  [{ src : Buffer.from(result.Body).toString('base64'), name : pictureName.split('/').pop() }]
+    res.render('pictures', { pictures : pictures })
 })
 
 //post new file
-router.post('/', async function(req, res, next) {
+router.post('/', requiresAuth(), async function(req, res, next) {
     const file = req.files.file;
     await s3.putObject({
         Body : file.data,
         Bucket : process.env.CYCLIC_BUCKET_NAME,
-        Key : 'public/' + file.name,
+        Key : req.oidc.user.email + '/' + file.name,
     }).promise();
     res.end();
-});
+}); 
 
 
 module.exports = router;

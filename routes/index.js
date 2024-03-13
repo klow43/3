@@ -1,31 +1,33 @@
 var express = require('express');
 var router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const AWS = require('aws-sdk');
-require('aws-sdk/lib/maintenance_mode_message').supress = true;
-const s3 = new AWS.S3();
+const AWS = require("aws-sdk");
+require('aws-sdk/lib/maintenance_mode_message').suppress = true;
+const s3 = new AWS.S3()
 
 /* GET home page. */
 router.get('/', async function(req, res, next) {
-  const params = {
-    Bucket : process.env.CYCLIC_BUCKET_NAME,
-    Delimiter : '/',
-    Prefix : 'public/'
+  var params = {
+    Bucket: process.env.CYCLIC_BUCKET_NAME,
+    Delimiter: '/',
+    Prefix: 'public/'
   };
-  const allObjects = await s3.listObjects(params).promise();
-  const keys = allObjects?.Contents.map( x => x.Key).slice(0,3);
+  var allObjects = await s3.listObjects(params).promise();
+  var keys = allObjects?.Contents.map( x=> x.Key).slice(0,3);
   const pictures = await Promise.all(keys.map(async (key) => {
     let my_file = await s3.getObject({
-      Bucket : process.env.CYCLIC_BUCKET_NAME,
-      Key : key,
+      Bucket: process.env.CYCLIC_BUCKET_NAME,
+      Key: key,
     }).promise();
     return {
-      src : Buffer.from(my_file.Body).toString('base64'),
-      name : key.split('/').pop()
+        src: Buffer.from(my_file.Body).toString('base64'),
+        name: key.split("/").pop()
     }
   }))
-  res.render('index', { pictures : pictures, title: 'Express' });
+  res.render('index', {
+    pictures: pictures,
+    title: 'Express',
+    isAuthenticated: req.oidc.isAuthenticated()
+  });
 });
 
 module.exports = router;
