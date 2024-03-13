@@ -24,7 +24,7 @@ router.get('/', requiresAuth(), async function(req, res, next) {
             name : key.split('/').pop()
         }
     })) 
-    res.render('pictures', { pictures : pictures})
+    res.render('pictures', { pictures : pictures, isAuthenticated: req.oidc.isAuthenticated()})
 });
 
 //display file of params.
@@ -35,7 +35,7 @@ router.get('/:pictureName', requiresAuth(), async function(req, res, next) {
             Key : pictureName,
         }).promise();
     let pictures =  [{ src : Buffer.from(result.Body).toString('base64'), name : pictureName.split('/').pop() }]
-    res.render('pictures', { pictures : pictures })
+    res.render('pictures', { pictures : pictures, isAuthenticated: req.oidc.isAuthenticated() })
 })
 
 //post new file
