@@ -1,3 +1,10 @@
-<h1><%= message %></h1>
-<h2><%= error.status %></h2>
-<pre><%= error.stack %></pre>
+<head>
+    <link rel="stylesheet" href="../stylesheets/navbar.css">
+</head>
+<body>
+    <%- include('./partials/navbar.ejs') %>
+    <h1><%= message %></h1>
+    <h2><%= error.status %></h2>
+    <pre><%= error.stack %></pre>  
+</body>
+

@@ -29,7 +29,7 @@ router.get('/', requiresAuth(), async function(req, res, next) {
 
 //display file of params.
 router.get('/:pictureName', requiresAuth(), async function(req, res, next) {
-    const pictureName = 'public/' + req.params.pictureName;
+    const pictureName = req.oidc.user.email + '/' + req.params.pictureName;
         const result = await s3.getObject({
             Bucket : process.env.CYCLIC_BUCKET_NAME,
             Key : pictureName,
