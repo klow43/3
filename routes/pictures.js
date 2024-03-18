@@ -49,5 +49,18 @@ router.post('/', requiresAuth(), async function(req, res, next) {
     res.end();
 }); 
 
+//delete file, assume already existd, no validation.
+router.delete('/', requiresAuth(),  async function(req, res, next) {
+    const filename = req.body.delete;
+    try{
+        await s3.deleteObject({
+        Bucket : process.env.CYCLIC_BUCKET_NAME,
+        Key : req.oidc.user.email + '/' + filename,
+    }).promise(); 
+    }
+    catch(err){console.log(err)}
+    res.send('deleted');
+})
+
 
 module.exports = router;
